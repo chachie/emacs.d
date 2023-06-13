@@ -5,15 +5,6 @@
 ;; Emacs configuration starter.
 ;;; Code:
 
-(require 'package)
-
-(add-to-list 'package-archives
-             '("melpa" . "https://melpa.org/packages/") t)
-(add-to-list 'package-archives
-             '("melpa-stable" . "https://stable.melpa.org/packages/") t)
-(add-to-list 'package-pinned-packages '(cider . "melpa-stable") t)
-(add-to-list 'package-pinned-packages '(magit . "melpa-stable") t)
-
 (setq custom-file "~/.emacs.d/custom.el")
 (load custom-file)
 
@@ -45,18 +36,5 @@
 (global-set-key (kbd "C-M-s") 'isearch-forward)
 (global-set-key (kbd "C-M-r") 'isearch-backward)
 (global-set-key (kbd "C-\"") 'comment-or-uncomment-region)
-
-(package-initialize)
-
-(when (not package-archive-contents)
-  (package-refresh-contents))
-
-(defvar my-packages
-  '(;; define packages
-    ))
-
-(dolist (p my-packages)
-  (when (not (package-installed-p p))
-    (package-install p)))
 
 ;;; init.el ends here
