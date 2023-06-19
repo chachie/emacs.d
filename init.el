@@ -28,6 +28,10 @@
 
 (fset 'yes-or-no-p 'y-or-n-p)
 
+; hooks
+(autoload 'enable-paredit-mode "paredit" "Turn on pseudo-structural editing of Lisp code." t)
+(add-hook 'emacs-lisp-mode-hook #'enable-paredit-mode)
+
 ; custom keybindings
 (global-set-key (kbd "C-x C-b") 'ibuffer)
 (global-set-key (kbd "M-/") 'hippie-expand)
@@ -36,5 +40,18 @@
 (global-set-key (kbd "C-M-s") 'isearch-forward)
 (global-set-key (kbd "C-M-r") 'isearch-backward)
 (global-set-key (kbd "C-\"") 'comment-or-uncomment-region)
+
+; custom functions
+(defun chrome (url)
+  "Start an instance of a chrome browser at URL with no cached files."
+  (interactive "surl:\n")
+  (let ((path-arg (format "--user-data-dir=/tmp/%d" (random 1000000))))
+    (start-process
+     "" nil
+     (if (string-equal system-type "gnu/linux")
+         "/usr/bin/google-chrome"
+       "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
+     path-arg "--disable-fre" "--no-default-browser-check"
+     "--no-first-run" url)))
 
 ;;; init.el ends here
