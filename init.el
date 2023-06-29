@@ -29,8 +29,6 @@
 (fset 'yes-or-no-p 'y-or-n-p)
 
 ; hooks
-(autoload 'enable-paredit-mode "paredit" "Turn on pseudo-structural editing of Lisp code." t)
-(add-hook 'emacs-lisp-mode-hook #'enable-paredit-mode)
 
 ; custom keybindings
 (global-set-key (kbd "C-x C-b") 'ibuffer)
@@ -42,16 +40,28 @@
 (global-set-key (kbd "C-\"") 'comment-or-uncomment-region)
 
 ; custom functions
-(defun chrome (url)
-  "Start an instance of a chrome browser at URL with no cached files."
-  (interactive "surl:\n")
-  (let ((path-arg (format "--user-data-dir=/tmp/%d" (random 1000000))))
-    (start-process
-     "" nil
-     (if (string-equal system-type "gnu/linux")
-         "/usr/bin/google-chrome"
-       "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
-     path-arg "--disable-fre" "--no-default-browser-check"
-     "--no-first-run" url)))
+(defun chrome (url user-data-dir)
+  "Start an instance of a chrome browser at URL with USER-DATA-DIR.
+If USER-DATA-DIR is not specified, choose a random one."
+  (interactive
+   (list
+    (read-string
+          "URL:" ""
+          "" nil "")
+    (read-directory-name
+     "User data directory:" (format "/tmp/%d" (random 1000000)) nil nil "")))
+  (start-process
+   "" nil
+   (if (string-equal system-type "gnu/linux")
+       "/usr/bin/google-chrome"
+     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
+   (format "--user-data-dir=%s" user-data-dir)
+   "--disable-fre" "--no-default-browser-check"
+   "--no-first-run" url))
+
+(defun copy-buffer-name ()
+  "Copy current buffer's file name."
+  (interactive)
+  (kill-new (buffer-file-name)))
 
 ;;; init.el ends here
