@@ -64,4 +64,33 @@ If USER-DATA-DIR is not specified, choose a random one."
   (interactive)
   (kill-new (buffer-file-name)))
 
+;; gnus
+(require 'text-property-search)
+
+(defun get-link (url-regex &optional copy)
+  "Return the first link that matches URL-REGEX in a gnus article.
+or COPY the link."
+  (goto-char (point-min))
+  (let ((match (text-property-search-forward
+                'gnus-string nil
+                (lambda (_ url) (when url (string-match-p url-regex url))))))
+    (when match
+      (let ((s (list (prop-match-value match)
+                     (buffer-substring-no-properties
+                      (prop-match-beginning match)
+                      (prop-match-end match))
+                     )))
+        (if copy (kill-new (car s)) s)))))
+
+(defun find-my-ipv4 (arg)
+  "Query Google for my ipv4 address.
+With a prefix ARG, copy it."
+  (interactive "P")
+  (let ((ip
+         (shell-command-to-string
+          "dig @ns1.google.com TXT o-o.myaddr.l.google.com +short")))
+    (when arg (kill-new ip))
+    (message ip)))
+
+
 ;;; init.el ends here
