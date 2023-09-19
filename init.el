@@ -87,10 +87,10 @@ or COPY the link."
 With a prefix ARG, copy it."
   (interactive "P")
   (let ((ip
-         (shell-command-to-string
-          "dig @ns1.google.com TXT o-o.myaddr.l.google.com +short")))
+         (string-replace "\"" ""
+          (shell-command-to-string
+           "dig @ns1.google.com TXT o-o.myaddr.l.google.com +short"))))
     (when arg (kill-new ip))
     (message ip)))
-
 
 ;;; init.el ends here
