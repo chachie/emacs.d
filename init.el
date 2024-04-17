@@ -30,6 +30,14 @@
 
 ; hooks
 
+(defun delete-trailing-whitespace-for-source-code ()
+  "This function operates on clj/el/py/c/cljc/cljs."
+  (when (some (lambda (v) (string-equal v (file-name-extension (buffer-name))))
+              '("clj" "el" "py" "c" "cljc" "cljs"))
+    (delete-trailing-whitespace)))
+
+(add-hook 'before-save-hook 'delete-trailing-whitespace-for-source-code)
+
 ; custom keybindings
 (global-set-key (kbd "C-x C-b") 'ibuffer)
 (global-set-key (kbd "M-/") 'hippie-expand)
