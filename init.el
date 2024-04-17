@@ -32,7 +32,7 @@
 
 (defun delete-trailing-whitespace-for-source-code ()
   "This function operates on clj/el/py/c/cljc/cljs."
-  (when (some (lambda (v) (string-equal v (file-name-extension (buffer-name))))
+  (when (some (lambda (v) (string-equal v (file-name-extension (buffer-file-name))))
               '("clj" "el" "py" "c" "cljc" "cljs"))
     (delete-trailing-whitespace)))
 
