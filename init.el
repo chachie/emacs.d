@@ -29,10 +29,11 @@
 (fset 'yes-or-no-p 'y-or-n-p)
 
 ; hooks
+(require 'cl-extra)
 
 (defun delete-trailing-whitespace-for-source-code ()
   "This function operates on clj/el/py/c/cljc/cljs."
-  (when (some (lambda (v) (string-equal v (file-name-extension (buffer-file-name))))
+  (when (cl-some (lambda (v) (string-equal v (file-name-extension (buffer-file-name))))
               '("clj" "el" "py" "c" "cljc" "cljs"))
     (delete-trailing-whitespace)))
 
