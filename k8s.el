@@ -68,6 +68,11 @@
   (interactive "sdeployment: \n")
   (shell-command (format "kubectl delete deployment %s" deployment)))
 
+(defun k-delete-service (service)
+  (interactive "sService: \n")
+  (shell-command (format "kubectl delete svc %s" service))
+  (switch-to-buffer "*Shell Command Output*"))
+
 (defun k-describe-service (service)
   (interactive "sservice: \n")
   (shell-command (format "kubectl describe service %s" service))
@@ -211,13 +216,27 @@
   (shell-command (format "kubectl delete -f %s" yaml-file))
 )
 
-(defun k-port-forward (pod src-port dst-port)
+(defun k-port-forward-pod (pod src-port dst-port)
   (interactive "spod: \nnlocal port: \nnpod port: ")
-  (let* ((buffer-name (format "*k-port-forward-%s*" pod)))
+  (let* ((buffer-name (format "*k-port-forward-%s-%s*" pod dst-port)))
     (shell buffer-name)
     (comint-send-string buffer-name
                         (format "kubectl port-forward pod/%s %s:%s\n"
                                 pod src-port dst-port))))
+
+(defun k-port-forward-deployment (deployment src-port dst-port)
+  (interactive "sdeployment: \nnlocal port: \nnpod port: ")
+  (let* ((buffer-name (format "*k-port-forward-%s-%s*" deployment dst-port)))
+    (shell buffer-name)
+    (comint-send-string buffer-name
+                        (format "kubectl port-forward deployment/%s %s:%s\n"
+                                deployment src-port dst-port))))
+
+(defun k-delete-configmap (configmap)
+  (interactive "sConfigMap: \n")
+  (shell-command (format "kubectl delete configmap %s" configmap))
+  (switch-to-buffer "*Shell Command Output*")
+)
 
 (defun k-describe-configmap (configmap)
   (interactive "sConfigMap: \n")
@@ -302,6 +321,10 @@
   (interactive)
   (shell-command "kubectl config current-context")
 )
+
+(defun k-use-context (context)
+  (interactive "scontext: ")
+  (shell-command (format "kubectl config use-context %s" context)))
 
 (defun k-get-ingress ()
   (interactive)

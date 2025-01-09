@@ -28,6 +28,11 @@
 
 (fset 'yes-or-no-p 'y-or-n-p)
 
+; ansi-term remove conflicting bindings
+(require 'term)
+(define-key term-raw-map (kbd "M-x") 'nil)
+(define-key term-raw-map (kbd "C-u") 'nil)
+
 ; hooks
 (require 'cl-extra)
 
