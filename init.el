@@ -44,6 +44,8 @@
 
 (add-hook 'before-save-hook 'delete-trailing-whitespace-for-source-code)
 
+(add-hook 'occur-mode-find-occurrence-hook (lambda () (recenter 10)))
+
 ; custom keybindings
 (global-set-key (kbd "C-x C-b") 'ibuffer)
 (global-set-key (kbd "M-/") 'hippie-expand)
