@@ -17,6 +17,20 @@ Example: for branch bugfix/tkt-123 return tkt-123(bugfix)"
   "Insert into current buffer a conventional commit prefix."
   (insert (extract-branch-tag (magit-get-current-branch))))
 
+
+(defun git-repo-path (&optional copy)
+  "Get the org/repo path.
+With prefix, COPY."
+  (interactive "P\n")
+  (seq-let (repo proj)
+      (take 2 (reverse (split-string (git-http-origin) "/")))
+    (let ((result (format "%s/%s" proj repo)))
+      (when copy
+        (message result)
+        (kill-new result))
+      result)))
+
+
 (defun git-http-origin (&optional copy)
   "Find http remote location from current repo.
 With prefix, COPY."
@@ -28,8 +42,9 @@ With prefix, COPY."
                                                   (replace-regexp-in-string
                                                    ":" "/" remote))))
          (ghb-remote (replace-regexp-in-string "\.git$" "" http-remote)))
-    (message ghb-remote)
-    (when copy (kill-new ghb-remote))
+    (when copy
+      (message ghb-remote)
+      (kill-new ghb-remote))
     ghb-remote))
 
 (defun current-file-path-in-repo (&optional copy)

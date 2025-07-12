@@ -110,4 +110,35 @@ With a prefix ARG, copy it."
     (when arg (kill-new ip))
     (message ip)))
 
+(require 'json)
+
+(defun read-json-vals-from-request (url token count &rest keys)
+  "Fetch top values from json KEYS returned from GET request to URL.
+Use provided bearer TOKEN and limit to COUNT values."
+  (let ((url-request-extra-headers `(("Authorization" . ,(concat "Bearer " token)))))
+    (message "fetching from url=%s" url)
+    (url-retrieve url
+                  (lambda (status count keys)
+                    (goto-char (point-max))
+                    (mark-paragraph)
+                    (let* ((json-object-type 'hash-table)
+                           (json-array-type 'list)
+                           (json-key-type 'string)
+                           (response (json-read-from-string
+                                      (buffer-substring (point) (point-max))))
+                           (vals
+                            (cl-map 'list (lambda (r)
+                                            (cl-map 'list
+                                                    (lambda (key)
+                                                      (gethash key r))
+                                                    keys))
+                                    (if count (take count response) response)))
+                           (msg (string-join
+                                 (cl-map 'list
+                                         (lambda (el) (string-join el "\n")) vals)
+                                 "\n\n")))
+                      (message msg)
+                      (kill-new msg)))
+                  (list count keys))))
+
 ;;; init.el ends here
