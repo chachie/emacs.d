@@ -74,7 +74,8 @@ If USER-DATA-DIR is not specified, choose a random one."
      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
    (format "--user-data-dir=%s" user-data-dir)
    "--disable-fre" "--no-default-browser-check"
-   "--no-first-run" url))
+   "--no-first-run" "--enable-features=WebContentsForceDark"
+   "--auto-open-devtools-for-tabs" url))
 
 (defun copy-buffer-name ()
   "Copy current buffer's file name."
@@ -144,10 +145,11 @@ Use provided bearer TOKEN and limit to COUNT values."
                                                     keys))
                                     (if count (take count list-response) list-response)))
                            (msg (string-join
-                                 (cl-map 'list
-                                         (lambda (el) (string-join
-                                                       (cons (format "# %s" (car el))
-                                                             (cdr el)) "\n")) vals)
+                                 (reverse
+                                  (cl-map 'list
+                                          (lambda (el) (string-join
+                                                        (cons (format "# %s" (car el))
+                                                              (cdr el)) "\n")) vals))
                                  "\n\n")))
                       (message msg)
                       (kill-new msg)))
