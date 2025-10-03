@@ -112,13 +112,15 @@ With a prefix ARG, copy it."
 
 (require 'json)
 
-(defun read-json-vals-from-request (url token count &rest keys)
+(defun read-json-vals-from-request (url auth-type auth-token count top-level-key
+                                        &rest keys)
   "Fetch top values from json KEYS returned from GET request to URL.
 Use provided bearer TOKEN and limit to COUNT values."
-  (let ((url-request-extra-headers `(("Authorization" . ,(concat "Bearer " token)))))
+  (let ((url-request-extra-headers
+         `(("Authorization" . ,(concat auth-type " " auth-token)))))
     (message "fetching from url=%s" url)
     (url-retrieve url
-                  (lambda (status count keys)
+                  (lambda (status count top-level-key keys)
                     (goto-char (point-max))
                     (mark-paragraph)
                     (let* ((json-object-type 'hash-table)
@@ -126,19 +128,29 @@ Use provided bearer TOKEN and limit to COUNT values."
                            (json-key-type 'string)
                            (response (json-read-from-string
                                       (buffer-substring (point) (point-max))))
+                           (list-response (if top-level-key (gethash top-level-key
+                                                                     response)
+                                            response))
                            (vals
                             (cl-map 'list (lambda (r)
                                             (cl-map 'list
-                                                    (lambda (key)
-                                                      (gethash key r))
+                                                    (lambda (key-path)
+                                                      (format "%s: %s" key-path
+                                                              (cl-reduce (lambda (v k)
+                                                                           (if (hash-table-p v)
+                                                                               (gethash k v "?") v))
+                                                                         key-path
+                                                                         :initial-value r)))
                                                     keys))
-                                    (if count (take count response) response)))
+                                    (if count (take count list-response) list-response)))
                            (msg (string-join
                                  (cl-map 'list
-                                         (lambda (el) (string-join el "\n")) vals)
+                                         (lambda (el) (string-join
+                                                       (cons (format "# %s" (car el))
+                                                             (cdr el)) "\n")) vals)
                                  "\n\n")))
                       (message msg)
                       (kill-new msg)))
-                  (list count keys))))
+                  (list count top-level-key keys))))
 
 ;;; init.el ends here
