@@ -128,7 +128,7 @@ With a prefix ARG, copy it."
                                      (top-level-key
                                       (gethash top-level-key
                                                response))
-                                     response))
+                                     (response)))
            (list-response (if (listp extracted-response) extracted-response
                             (list extracted-response)))
            (f (message "%s" list-response))
