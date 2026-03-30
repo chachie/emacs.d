@@ -113,46 +113,68 @@ With a prefix ARG, copy it."
 
 (require 'json)
 
-(defun read-json-vals-from-request (url auth-type auth-token count top-level-key
-                                        &rest keys)
-  "Fetch top values from json KEYS returned from GET request to URL.
-Use provided bearer TOKEN and limit to COUNT values."
-  (let ((url-request-extra-headers
-         `(("Authorization" . ,(concat auth-type " " auth-token)))))
+(defun process-json-response (status count top-level-key result-fmt keys write-to-file)
+  (goto-char (point-max))
+  (mark-paragraph)
+  (if (= 0  count)
+      (message "Response: %s" (plist-get status :error))
+    (let* ((json-object-type 'hash-table)
+           (json-array-type 'list)
+           (json-key-type 'string)
+           (response (json-read-from-string
+                      (buffer-substring (point) (point-max))))
+           (extracted-response (cond ((and (not top-level-key) (hash-table-p response))
+                                      response)
+                                     (top-level-key
+                                      (gethash top-level-key
+                                               response))
+                                     response))
+           (list-response (if (listp extracted-response) extracted-response
+                            (list extracted-response)))
+           (f (message "%s" list-response))
+           (vals
+            (cl-map 'list (lambda (r)
+                            (cl-map 'list
+                                    (lambda (key-path)
+                                      (format "%s"
+                                              (cl-reduce (lambda (v k)
+                                                           (if (hash-table-p v)
+                                                               (gethash k v "?") v))
+                                                         key-path
+                                                         :initial-value r)))
+                                    keys))
+                    (if count (take count list-response) list-response)))
+           (msg (string-join
+                 (reverse
+                  (cl-map 'list
+                          (lambda (el)
+                            (if result-fmt (apply 'format result-fmt el)
+                              (string-join el "\n"))) vals))
+                 "\n")))
+      (when write-to-file (write-region msg nil write-to-file nil))
+      (message "%s" msg)
+      (kill-new msg))))
+
+(defun read-json-vals-from-request
+    (url method payload
+     auth-type auth-token user-agent
+     write-to-file count top-level-key result-fmt
+     &rest keys)
+  "Fetch TOP-LEVEL-KEY values from json KEYS returned from GET request to URL.
+Produce result in given RESULT-FMT.
+Use provided AUTH-TYPE, AUTH-TOKEN and USER-AGENT and limit to COUNT values.
+WRITE-TO-FILE to output to filename, or nil to ignore.
+"
+  (let ((url-request-method method)
+        (url-request-data payload)
+        (url-request-extra-headers
+         `(("User-Agent" . ,(if user-agent user-agent "Mozilla/5.0"))
+           ("Content-Type" . "application/json")
+           ("Authorization" . ,(concat auth-type " " auth-token)))))
     (message "fetching from url=%s" url)
-    (url-retrieve url
-                  (lambda (status count top-level-key keys)
-                    (goto-char (point-max))
-                    (mark-paragraph)
-                    (let* ((json-object-type 'hash-table)
-                           (json-array-type 'list)
-                           (json-key-type 'string)
-                           (response (json-read-from-string
-                                      (buffer-substring (point) (point-max))))
-                           (list-response (if top-level-key (gethash top-level-key
-                                                                     response)
-                                            response))
-                           (vals
-                            (cl-map 'list (lambda (r)
-                                            (cl-map 'list
-                                                    (lambda (key-path)
-                                                      (format "%s: %s" key-path
-                                                              (cl-reduce (lambda (v k)
-                                                                           (if (hash-table-p v)
-                                                                               (gethash k v "?") v))
-                                                                         key-path
-                                                                         :initial-value r)))
-                                                    keys))
-                                    (if count (take count list-response) list-response)))
-                           (msg (string-join
-                                 (reverse
-                                  (cl-map 'list
-                                          (lambda (el) (string-join
-                                                        (cons (format "# %s" (car el))
-                                                              (cdr el)) "\n")) vals))
-                                 "\n\n")))
-                      (message msg)
-                      (kill-new msg)))
-                  (list count top-level-key keys))))
+    (url-retrieve url 'process-json-response
+                  (list count top-level-key result-fmt keys write-to-file))))
+
+
 
 ;;; init.el ends here
