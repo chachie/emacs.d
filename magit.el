@@ -18,17 +18,15 @@ Example: for branch bugfix/tkt-123 return tkt-123(bugfix)"
   (insert (extract-branch-tag (magit-get-current-branch))))
 
 
-(defun git-repo-path (&optional copy)
-  "Get the org/repo path.
-With prefix, COPY."
-  (interactive "P\n")
-  (seq-let (repo proj)
-      (take 2 (reverse (split-string (git-http-origin) "/")))
-    (let ((result (format "%s/%s" proj repo)))
-      (when copy
-        (message result)
-        (kill-new result))
-      result)))
+(defun git-repo-path (copy sep)
+  "Get the org/repo path. COPY option and place SEP."
+  (let ((path
+	 (string-join (drop 3 (split-string (git-http-origin) "/"))
+		      (if sep sep "/"))))
+    (when copy
+      (message path)
+      (kill-new path))
+    path))
 
 
 (defun git-http-origin (&optional copy)

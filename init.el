@@ -36,10 +36,11 @@
 ; hooks
 (require 'cl-extra)
 
+
 (defun delete-trailing-whitespace-for-source-code ()
   "This function operates on clj/el/py/c/cljc/cljs."
   (when (cl-some (lambda (v) (string-equal v (file-name-extension (buffer-file-name))))
-              '("clj" "el" "py" "c" "cljc" "cljs"))
+              '("clj" "el" "py" "c" "cljc" "cljs" "tsx" "jsx" "ts" "js"))
     (delete-trailing-whitespace)))
 
 (add-hook 'before-save-hook 'delete-trailing-whitespace-for-source-code)
@@ -63,10 +64,10 @@ If USER-DATA-DIR is not specified, choose a random one."
   (interactive
    (list
     (read-string
-          "URL:" ""
-          "" nil "")
-    (read-directory-name
-     "User data directory:" (format "/tmp/%d" (random 1000000)) nil nil "")))
+     "URL:" ""
+     "" nil "")
+    (expand-file-name (read-directory-name
+                       "User data directory:" (format "/tmp/%d" (random 1000000)) nil nil ""))))
   (start-process
    "" nil
    (if (string-equal system-type "gnu/linux")
@@ -74,8 +75,11 @@ If USER-DATA-DIR is not specified, choose a random one."
      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
    (format "--user-data-dir=%s" user-data-dir)
    "--disable-fre" "--no-default-browser-check"
-   "--no-first-run" "--enable-features=WebContentsForceDark"
-   "--auto-open-devtools-for-tabs" url))
+   "--no-first-run"
+   "--remote-debugging-port=9222"
+   ;; "--enable-features=WebContentsForceDark"
+   ;; "--auto-open-devtools-for-tabs"
+   url))
 
 (defun copy-buffer-name ()
   "Copy current buffer's file name."
@@ -119,6 +123,7 @@ With a prefix ARG, copy it."
   (if (= 0  count)
       (message "Response: %s" (plist-get status :error))
     (let* ((json-object-type 'hash-table)
+           (json-false "false")
            (json-array-type 'list)
            (json-key-type 'string)
            (response (json-read-from-string
@@ -175,6 +180,7 @@ WRITE-TO-FILE to output to filename, or nil to ignore.
     (url-retrieve url 'process-json-response
                   (list count top-level-key result-fmt keys write-to-file))))
 
-
+(defun string-or-default (value default)
+  (if (string-blank-p value) default value))
 
 ;;; init.el ends here
