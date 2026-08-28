@@ -1,10 +1,9 @@
-;;; magit.el --- Magit helper commands
+;;; magit.el --- Magit helper commands  -*- lexical-binding: t; -*-
 ;;
 ;;
 ;;; Commentary:
 ;; Interactive functions for magit.
 ;;; Code:
-(require 'magit)
 
 (defun extract-branch-tag (branch-name)
   "Return conventional commit prefix for git based on BRANCH-NAME.

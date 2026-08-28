@@ -1,4 +1,4 @@
-;;; init.el --- Emacs configuration
+;;; init.el --- Emacs configuration  -*- lexical-binding: t; -*-
 ;;
 ;;
 ;;; Commentary:
@@ -19,6 +19,7 @@
 (blink-cursor-mode 0)
 (global-display-line-numbers-mode)
 (electric-indent-mode 0)
+(which-key-mode)
 
 (when (fboundp 'tool-bar-mode)
   (tool-bar-mode -1))
@@ -64,10 +65,11 @@ If USER-DATA-DIR is not specified, choose a random one."
   (interactive
    (list
     (read-string
-     "URL:" ""
-     "" nil "")
-    (expand-file-name (read-directory-name
-                       "User data directory:" (format "/tmp/%d" (random 1000000)) nil nil ""))))
+          "URL:" ""
+          "" nil "")
+    (expand-file-name
+     (read-directory-name
+      "User data directory:" (format "/tmp/%d" (random 1000000)) nil nil ""))))
   (start-process
    "" nil
    (if (string-equal system-type "gnu/linux")
@@ -117,11 +119,12 @@ With a prefix ARG, copy it."
 
 (require 'json)
 
-(defun process-json-response (status count top-level-key result-fmt keys write-to-file)
-  (goto-char (point-max))
-  (mark-paragraph)
-  (if (= 0  count)
-      (message "Response: %s" (plist-get status :error))
+
+(defun process-json-list (spec)
+  (let* ((top-level-key (extraction-spec-top-level-field spec))
+         (result-window (extraction-spec-result-window spec))
+         (result-fmt (extraction-spec-result-fmt spec))
+         (keys (extraction-spec-fields spec)))
     (let* ((json-object-type 'hash-table)
            (json-false "false")
            (json-array-type 'list)
@@ -131,12 +134,17 @@ With a prefix ARG, copy it."
            (extracted-response (cond ((and (not top-level-key) (hash-table-p response))
                                       response)
                                      (top-level-key
-                                      (gethash top-level-key
-                                               response))
+                                      (if (listp top-level-key)
+                                          (cl-reduce (lambda (v k)
+                                                       (if (hash-table-p v)
+                                                           (gethash k v "?") v))
+                                                     top-level-key
+                                                     :initial-value response)
+                                        (gethash top-level-key
+                                                 response)))
                                      (response)))
            (list-response (if (listp extracted-response) extracted-response
                             (list extracted-response)))
-           (f (message "%s" list-response))
            (vals
             (cl-map 'list (lambda (r)
                             (cl-map 'list
@@ -148,7 +156,13 @@ With a prefix ARG, copy it."
                                                          key-path
                                                          :initial-value r)))
                                     keys))
-                    (if count (take count list-response) list-response)))
+                    (if result-window
+                        (if (listp result-window)
+                            (cl-subseq list-response
+                                       (1- (car result-window))
+                                       (1- (cadr result-window)))
+                          (take result-window list-response))
+                      list-response)))
            (msg (string-join
                  (reverse
                   (cl-map 'list
@@ -156,6 +170,16 @@ With a prefix ARG, copy it."
                             (if result-fmt (apply 'format result-fmt el)
                               (string-join el "\n"))) vals))
                  "\n")))
+      msg))
+)
+
+(defun process-json-response (status extraction-specs write-to-file)
+  (goto-char (point-max))
+  (mark-paragraph)
+  (if (not extraction-specs)
+      (message "Response: %s" (plist-get status :error))
+    (let* ((extractions (mapcar 'process-json-list extraction-specs))
+           (msg (string-join extractions "\n\n")))
       (when write-to-file (write-region msg nil write-to-file nil))
       (message "%s" msg)
       (kill-new msg))))
@@ -163,12 +187,14 @@ With a prefix ARG, copy it."
 (defun read-json-vals-from-request
     (url method payload
      auth-type auth-token user-agent
-     write-to-file count top-level-key result-fmt
-     &rest keys)
+     write-to-file
+     extraction-specs)
   "Fetch TOP-LEVEL-KEY values from json KEYS returned from GET request to URL.
 Produce result in given RESULT-FMT.
-Use provided AUTH-TYPE, AUTH-TOKEN and USER-AGENT and limit to COUNT values.
+Use provided AUTH-TYPE, AUTH-TOKEN and USER-AGENT and limit to RESULT-WINDOW values.
+RESULT-WINDOW can be a single number or a list of numbers to specify range of results to return.
 WRITE-TO-FILE to output to filename, or nil to ignore.
+TOP-LEVEL-KEY can be a list of keys to traverse to get to the list of objects to extract from.
 "
   (let ((url-request-method method)
         (url-request-data payload)
@@ -178,9 +204,13 @@ WRITE-TO-FILE to output to filename, or nil to ignore.
            ("Authorization" . ,(concat auth-type " " auth-token)))))
     (message "fetching from url=%s" url)
     (url-retrieve url 'process-json-response
-                  (list count top-level-key result-fmt keys write-to-file))))
+                  (list extraction-specs write-to-file))))
+
 
 (defun string-or-default (value default)
   (if (string-blank-p value) default value))
+(cl-defstruct extraction-spec
+  top-level-field result-window result-fmt fields)
+
 
 ;;; init.el ends here

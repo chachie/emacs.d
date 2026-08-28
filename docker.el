@@ -1,4 +1,4 @@
-;;; docker.el --- Docker helper commands
+;;; docker.el --- Docker helper commands  -*- lexical-binding: t; -*-
 ;;
 ;;
 ;;; Commentary:
