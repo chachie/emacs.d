@@ -59,14 +59,18 @@
 (global-set-key (kbd "C-x y") 'term-paste)
 
 ; custom functions
-(defun chrome (url user-data-dir)
+(defun chrome (url rdp user-data-dir)
   "Start an instance of a chrome browser at URL with USER-DATA-DIR.
-If USER-DATA-DIR is not specified, choose a random one."
+If USER-DATA-DIR is not specified, choose a random one.
+IF RDP is specified, use as remote debugging port."
   (interactive
    (list
     (read-string
-          "URL:" ""
-          "" nil "")
+     "URL:" ""
+     "" nil "")
+    (read-string
+     "RDP:" "11000"
+     "" "11000" "")
     (expand-file-name
      (read-directory-name
       "User data directory:" (format "/tmp/%d" (random 1000000)) nil nil ""))))
@@ -78,7 +82,7 @@ If USER-DATA-DIR is not specified, choose a random one."
    (format "--user-data-dir=%s" user-data-dir)
    "--disable-fre" "--no-default-browser-check"
    "--no-first-run"
-   "--remote-debugging-port=9222"
+   (format "--remote-debugging-port=%s" rdp)
    ;; "--enable-features=WebContentsForceDark"
    ;; "--auto-open-devtools-for-tabs"
    url))
